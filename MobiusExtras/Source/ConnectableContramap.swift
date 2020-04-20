@@ -21,21 +21,13 @@ import MobiusCore
 
 public extension Connectable {
     func contramap<NewInput>(_ map: @escaping (NewInput) -> Input) -> AnyConnectable<NewInput, Output> {
-        let newConnectClosure = { (consumer: @escaping Consumer<Output>) -> Connection<NewInput> in
-            let connection = self.connect(consumer)
-            let mappedAcceptFunction = { (newTypeInput: NewInput) in
-                let oldTypeInput = map(newTypeInput)
-                connection.accept(oldTypeInput)
-            }
+        return AnyConnectable { dispatch in
+            let connection = self.connect(dispatch)
 
-            return Connection<NewInput>(
-                acceptClosure: mappedAcceptFunction,
+            return Connection(
+                acceptClosure: { connection.accept(map($0)) },
                 disposeClosure: connection.dispose
             )
         }
-
-        let contramapped = AnyConnectable(newConnectClosure)
-
-        return contramapped
     }
 }
